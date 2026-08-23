@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <title>قضاء الموصل | Nineveh GEOINT</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: Tahoma, Arial, sans-serif;
+      background: #eef1f3;
+      color: #18232d;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      min-height: 72px;
+      background: #102437;
+      color: white;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      flex-wrap: wrap;
+      border-bottom: 3px solid #c6ccd1;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 29px;
+    }
+
+    header .sub {
+      color: #ddb65f;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    header .doc {
+      font-size: 11px;
+      color: #d9e0e6;
+    }
+
+    #map {
+      flex: 1;
+      min-height: 650px;
+      width: 100%;
+      background: #bfc7cd;
+    }
+
+    .info {
+      position: absolute;
+      top: 92px;
+      right: 14px;
+      z-index: 1000;
+      width: 300px;
+      max-height: calc(100vh - 115px);
+      overflow: auto;
+
+      background: rgba(255,255,255,.94);
+      border: 1px solid #cbd2d7;
+      border-radius: 12px;
+      padding: 12px;
+
+      box-shadow: 0 4px 18px rgba(0,0,0,.18);
+    }
+
+    .info h2 {
+      margin: 0 0 10px;
+      color: #102437;
+      font-size: 15px;
+      border-bottom: 1px solid #d9dfe3;
+      padding-bottom: 7px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 8px;
+      font-size: 12px;
+      padding: 6px 0;
+      border-bottom: 1px solid #edf0f2;
+    }
+
+    .row span {
+      color: #6a7680;
+    }
+
+    .row b {
+      font-weight: 700;
+    }
+
+    .ltr {
+      direction: ltr;
+      text-align: center;
+      font-family: monospace;
+    }
+
+    #neighbor-list,
+    #subdistrict-list {
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .item {
+      padding: 6px 4px;
+      border-bottom: 1px solid #edf0f2;
+    }
+
+    .note {
+      margin-top: 10px;
+      padding: 8px;
+      border: 1px solid #e5ce92;
+      background: #fff7e6;
+      border-radius: 8px;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    .status {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #64717b;
+      line-height: 1.5;
+    }
+
+    .district-label {
+      background: #102437;
+      color: white;
+      padding: 5px 9px;
+      border-radius: 6px;
+      border: 1px solid #d7af59;
+      white-space: nowrap;
+      font-weight: bold;
+      font-size: 13px;
+      box-shadow: 0 2px 5px rgba(0,0,0,.35);
+    }
+
+    .neighbor-label {
+      background: rgba(15,30,45,.78);
+      color: white;
+      padding: 4px 7px;
+      border-radius: 5px;
+      border: 1px solid rgba(255,255,255,.75);
+      white-space: nowrap;
+      font-weight: bold;
+      font-size: 12px;
+      text-shadow: 0 1px 2px #000;
+    }
+
+    .leaflet-div-icon {
+      background: transparent;
+      border: none;
+    }
+
+    .legend {
+      position: absolute;
+      left: 14px;
+      bottom: 22px;
+      z-index: 1000;
+
+      background: rgba(13,28,42,.88);
+      color: white;
+      padding: 8px 11px;
+      border-radius: 8px;
+      font-size: 11px;
+    }
+
+    .legend div {
+      margin: 4px 0;
+    }
+
+    .line {
+      display: inline-block;
+      width: 28px;
+      height: 4px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .mosul {
+      background: #ffb52e;
+    }
+
+    .neighbor {
+      background: white;
+    }
+
+    .sub {
+      background: #f3dc6f;
+    }
+
+    @media (max-width: 800px) {
+      .info {
+        position: static;
+        width: 100%;
+        max-height: none;
+        border-radius: 0;
+      }
+
+      #map {
+        min-height: 70vh;
+      }
+
+      .legend {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div>
+    <h1>قضاء الموصل</h1>
+    <div class="sub">MOSUL DISTRICT — GIS / SATELLITE</div>
+  </div>
+
+  <div class="doc">
+    NIN-GEO-2026-001
+  </div>
+</header>
+
+
+<div id="map"></div>
+
+
+<div class="info">
+
+  <h2>المرجع الجغرافي</h2>
+
+  <div class="row">
+    <span>المحافظة</span>
+    <b>نينوى</b>
+  </div>
+
+  <div class="row">
+    <span>الوحدة</span>
+    <b>قضاء الموصل — ADM2</b>
+  </div>
+
+  <div class="row">
+    <span>MGRS</span>
+    <b id="mgrs" class="ltr">—</b>
+  </div>
+
+  <div class="row">
+    <span>المساحة</span>
+    <b id="area">—</b>
+  </div>
+
+
+  <h2 style="margin-top:15px">
+    الأقضية التي تحد الموصل
+  </h2>
+
+  <div id="neighbor-list">
+    جارٍ التحميل...
+  </div>
+
+
+  <h2 style="margin-top:15px">
+    النواحي ADM3
+  </h2>
+
+  <div id="subdistrict-list">
+    جارٍ التحميل...
+  </div>
+
+
+  <div class="note">
+    <b>بعشيقة ناحية وليست قضاء.</b>
+    لذلك لن تظهر ضمن الأقضية المحيطة.
+    وإذا كانت موجودة في المصدر فستظهر فقط ضمن طبقة ADM3.
+  </div>
+
+  <div id="status" class="status">
+    تحميل بيانات GIS...
+  </div>
+
+</div>
+
+
+<div class="legend">
+  <div>
+    <i class="line mosul"></i>
+    حد قضاء الموصل
+  </div>
+
+  <div>
+    <i class="line neighbor"></i>
+    حدود الأقضية المجاورة
+  </div>
+
+  <div>
+    <i class="line sub"></i>
+    حدود النواحي
+  </div>
+</div>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="https://unpkg.com/@turf/turf@7.2.0/turf.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/mgrs@2.1.0/dist/mgrs.min.js"></script>
+
+
+<script>
+
+/* =========================================================
+   إعدادات ArcGIS
+========================================================= */
+
+const SERVICE =
+"https://services8.arcgis.com/BuDSiwZVG3gNaQUz/ArcGIS/rest/services/irq_administrative_divisions_shapefiles/FeatureServer";
+
+const ADM2 = 4;
+const ADM3 = 5;
+
+
+/* =========================================================
+   إنشاء الخريطة
+========================================================= */
+
+const map = L.map("map", {
+  zoomControl: true,
+  preferCanvas: false
+});
+
+
+/* =========================================================
+   صورة أقمار صناعية فعلية
+========================================================= */
+
+L.tileLayer(
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  {
+    maxZoom: 19,
+
+    attribution:
+      "Imagery © Esri, Maxar, Earthstar Geographics and contributors"
+  }
+).addTo(map);
+
+
+L.control.scale({
+  imperial: false
+}).addTo(map);
+
+
+
+/* =========================================================
+   دوال مساعدة
+========================================================= */
+
+async function getGeoJSON(layer, where) {
+
+  const params =
+    new URLSearchParams({
+
+      where: where,
+
+      outFields: "*",
+
+      returnGeometry: "true",
+
+      outSR: "4326",
+
+      f: "geojson"
+
+    });
+
+
+  const url =
+    `${SERVICE}/${layer}/query?${params}`;
+
+
+  const response =
+    await fetch(url);
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      "ArcGIS HTTP " + response.status
+    );
+
+  }
+
+
+  const data =
+    await response.json();
+
+
+  if (data.error) {
+
+    throw new Error(
+      data.error.message
+    );
+
+  }
+
+
+  return data;
+
+}
+
+
+
+function centerPoint(feature) {
+
+  return turf
+    .pointOnFeature(feature)
+    .geometry
+    .coordinates;
+
+}
+
+
+
+function getMGRS(feature) {
+
+  const [lon, lat] =
+    centerPoint(feature);
+
+
+  const raw =
+    mgrs
+      .forward(
+        [lon, lat],
+        4
+      )
+      .toUpperCase()
+      .replace(/\s+/g, "");
+
+
+  const m =
+    raw.match(
+      /^(\d{1,2}[C-X])([A-Z]{2})(\d+)$/
+    );
+
+
+  if (!m)
+    return raw;
+
+
+  const digits =
+    m[3];
+
+
+  const half =
+    digits.length / 2;
+
+
+  return (
+    m[1] +
+    " " +
+    m[2] +
+    " " +
+    digits.slice(0, half) +
+    " " +
+    digits.slice(half)
+  );
+
+}
+
+
+
+function addTextLabel(
+  feature,
+  text,
+  cssClass
+) {
+
+  const [lon, lat] =
+    centerPoint(feature);
+
+
+  const marker =
+    L.marker(
+      [lat, lon],
+      {
+
+        interactive: false,
+
+        icon:
+          L.divIcon({
+
+            className: "",
+
+            html:
+              `<div class="${cssClass}">
+                ${text}
+              </div>`
+
+          })
+
+      }
+    );
+
+
+  marker.addTo(map);
+
+}
+
+
+
+/* =========================================================
+   1 ـ قضاء الموصل ADM2
+========================================================= */
+
+async function loadMosul() {
+
+  const where =
+    "ADM2_AR='الموصل'";
+
+
+  const data =
+    await getGeoJSON(
+      ADM2,
+      where
+    );
+
+
+  if (!data.features.length) {
+
+    throw new Error(
+      "لم يتم العثور على قضاء الموصل"
+    );
+
+  }
+
+
+  const mosul =
+    data.features[0];
+
+
+  const layer =
+    L.geoJSON(
+      data,
+      {
+
+        style: {
+
+          color: "#ffb52e",
+
+          weight: 5,
+
+          fillColor: "#ffb52e",
+
+          fillOpacity: 0.04
+
+        }
+
+      }
+    )
+    .addTo(map);
+
+
+  map.fitBounds(
+    layer.getBounds(),
+    {
+      padding: [30,30]
+    }
+  );
+
+
+  addTextLabel(
+    mosul,
+    "قضاء الموصل",
+    "district-label"
+  );
+
+
+  document
+    .getElementById("mgrs")
+    .textContent =
+      getMGRS(mosul);
+
+
+  const area =
+    turf.area(mosul) /
+    1000000;
+
+
+  document
+    .getElementById("area")
+    .textContent =
+      area.toLocaleString(
+        "ar-IQ",
+        {
+          maximumFractionDigits: 1
+        }
+      )
+      +
+      " كم²";
+
+
+  return mosul;
+
+}
+
+
+
+/* =========================================================
+   2 ـ النواحي داخل قضاء الموصل ADM3
+========================================================= */
+
+async function loadSubdistricts() {
+
+  const where =
+    "ADM2_AR='الموصل'";
+
+
+  const data =
+    await getGeoJSON(
+      ADM3,
+      where
+    );
+
+
+  L.geoJSON(
+    data,
+    {
+
+      style: {
+
+        color: "#f3dc6f",
+
+        weight: 1.6,
+
+        fillOpacity: 0
+
+      }
+
+    }
+  )
+  .addTo(map);
+
+
+  const box =
+    document
+      .getElementById(
+        "subdistrict-list"
+      );
+
+
+  box.innerHTML = "";
+
+
+  data.features
+    .sort(
+      (a,b) =>
+
+        (a.properties.ADM3_AR || "")
+        .localeCompare(
+          b.properties.ADM3_AR || "",
+          "ar"
+        )
+
+    )
+    .forEach(
+      feature => {
+
+        const name =
+          feature.properties.ADM3_AR ||
+          feature.properties.ADM3_EN;
+
+
+        const div =
+          document.createElement(
+            "div"
+          );
+
+
+        div.className =
+          "item";
+
+
+        div.textContent =
+          "ناحية " + name;
+
+
+        box.appendChild(div);
+
+      }
+    );
+
+}
+
+
+
+/* =========================================================
+   3 ـ الأقضية المجاورة
+========================================================= */
+
+async function loadNeighbors(
+  mosulFeature
+) {
+
+  /*
+    نحصل أولاً على كل أقضية نينوى.
+    لا نكتب أسماء الجوار يدويًا.
+  */
+
+  const nineveh =
+    await getGeoJSON(
+      ADM2,
+      "ADM1_AR='نينوى'"
+    );
+
+
+  /*
+    لأن مخمور قد يختلف تصنيفها في بعض مصادر GIS،
+    نحاول إحضارها أيضًا بشكل مستقل.
+  */
+
+  let makhmour = {
+    features: []
+  };
+
+
+  try {
+
+    makhmour =
+      await getGeoJSON(
+        ADM2,
+        "ADM2_AR='مخمور'"
+      );
+
+  }
+  catch (e) {
+
+    console.log(
+      "Makhmour optional query failed"
+    );
+
+  }
+
+
+  const candidates = [
+
+    ...nineveh.features,
+
+    ...makhmour.features
+
+  ];
+
+
+  const seen =
+    new Set();
+
+
+  const neighbors =
+    [];
+
+
+  for (
+    const feature
+    of candidates
+  ) {
+
+
+    const name =
+      feature.properties.ADM2_AR ||
+      feature.properties.ADM2_EN;
+
+
+    if (!name)
+      continue;
+
+
+    if (name === "الموصل")
+      continue;
+
+
+    /*
+      منع بعشيقة من الظهور كقضاء
+      حتى لو حصل خطأ في أي مصدر.
+    */
+
+    if (
+      name.includes("بعشيقة") ||
+      name.toLowerCase()
+          .includes("baashiqa")
+    )
+      continue;
+
+
+    /*
+      نختبر إذا كان القضاء يلامس
+      أو يتقاطع مع حدود الموصل.
+    */
+
+    let touching = false;
+
+
+    try {
+
+      touching =
+        turf.booleanIntersects(
+          mosulFeature,
+          feature
+        );
+
+    }
+    catch (e) {
+
+      touching = false;
+
+    }
+
+
+    if (!touching)
+      continue;
+
+
+    if (seen.has(name))
+      continue;
+
+
+    seen.add(name);
+
+
+    neighbors.push(
+      feature
+    );
+
+
+  }
+
+
+
+  /*
+    رسم الأقضية المجاورة
+  */
+
+  for (
+    const feature
+    of neighbors
+  ) {
+
+
+    const name =
+      feature.properties.ADM2_AR ||
+      feature.properties.ADM2_EN;
+
+
+    L.geoJSON(
+      feature,
+      {
+
+        style: {
+
+          color: "#ffffff",
+
+          weight: 2.5,
+
+          dashArray:
+            "8 6",
+
+          fillOpacity: 0
+
+        }
+
+      }
+    )
+    .addTo(map);
+
+
+
+    addTextLabel(
+      feature,
+      "قضاء " + name,
+      "neighbor-label"
+    );
+
+  }
+
+
+
+  /*
+    قائمة جانبية
+  */
+
+  const list =
+    document
+      .getElementById(
+        "neighbor-list"
+      );
+
+
+  list.innerHTML = "";
+
+
+  if (!neighbors.length) {
+
+    list.textContent =
+      "لم يتم تحديد الجوار تلقائيًا.";
+
+    return;
+
+  }
+
+
+  neighbors.forEach(
+    feature => {
+
+
+      const name =
+        feature.properties.ADM2_AR ||
+        feature.properties.ADM2_EN;
+
+
+      const div =
+        document.createElement(
+          "div"
+        );
+
+
+      div.className =
+        "item";
+
+
+      div.textContent =
+        "قضاء " + name;
+
+
+      list.appendChild(
+        div
+      );
+
+
+    }
+  );
+
+}
+
+
+
+/* =========================================================
+   تشغيل البرنامج
+========================================================= */
+
+async function start() {
+
+  const status =
+    document
+      .getElementById(
+        "status"
+      );
+
+
+  try {
+
+
+    status.textContent =
+      "تحميل حد قضاء الموصل...";
+
+
+    const mosul =
+      await loadMosul();
+
+
+
+    status.textContent =
+      "تحميل النواحي...";
+
+
+    await loadSubdistricts();
+
+
+
+    status.textContent =
+      "تحديد الأقضية المجاورة...";
+
+
+    await loadNeighbors(
+      mosul
+    );
+
+
+
+    status.textContent =
+      "جاهز — GIS / Satellite / ADM2 / ADM3";
+
+
+  }
+  catch (error) {
+
+
+    console.error(
+      error
+    );
+
+
+    status.textContent =
+      "خطأ: " +
+      error.message;
+
+
+  }
+
+}
+
+
+start();
+
+</script>
+
+</body>
+</html>
